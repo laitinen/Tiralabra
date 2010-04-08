@@ -12,14 +12,17 @@ struct node {
     node* D;
     node* L;
     node* R;
-    header* head;
+    header* C;
+
+    int row;
+
+    virtual ~node() {}
 };
 
 struct header : node {
     int size;
+    ~header() {}
 };
-
-header* root;
 
 int region(int r, int c, int N) {
     int S = N == 16 ? 4 : (N == 9 ? 3 : 2);
@@ -50,6 +53,74 @@ VVI exactify(const VVI& S, const int N) {
     return vec;
 }
 
+
+void cover(header* head) {
+    head->R->L = head->L;
+    head->L->R = head->R;
+    for(node* i = head->D; i != head; i = i->D) {
+        for(node* j = i->R; j != i; j = j->R) {
+            j->D->U = j->U;
+            j->U->D = j->D;
+        }
+    }
+}
+
+void uncover(header* head) {
+    for(node* i = head->U; i != head; i = i->U) {
+        for(node* j = i->L; j != i; i = i->L) {
+            j->D->U = j;
+            j->U->D = j;
+        }
+    }
+    head->R->L = head;
+    head->L->R = head;
+}
+
+vector<int> sol;
+vector<node*> ot;
+bool halt = false;
+
+void exact(header* root) {
+	cout<<"jou"<<endl;
+	if(root->R == root) {
+		//cout<<"zxx"<<endl;
+        // print solution
+        for(int i = 0; i < sol.size(); ++i) {
+            cout<<sol[i]<<", ";
+        }
+        cout<<endl;
+        halt = true;
+        return;
+    }
+    //cout<<"po"<<endl;
+    // choose column
+    header* head = dynamic_cast<header*>(root->R);
+
+    cover(head);
+
+    for(node* r = head->D; r != head; r = r->D) {
+    	//cout<<"you"<<endl;
+        sol.push_back(r->row); 
+        int k = ot.size();
+        ot.push_back(r);
+        for(node* j = r->R; j != r; j = j->R) {
+            cover(dynamic_cast<header*>(j));
+        }
+        exact(root);
+        if(halt) return;
+        r = ot[k];
+        head = r->C;
+        for(node* j = r->L; j != r; r = r->L) {
+            uncover(dynamic_cast<header*>(j));
+        }
+        sol.pop_back();
+    }
+
+    uncover(head);
+}
+
+vector<vector<node*> > rows;
+
 int main() {
 	int N;
 	cin>>N;
@@ -63,7 +134,7 @@ int main() {
 
     // initialize root node
 
-    root = new header;
+    header* root = new header;
     root->L = root;
     root->R = root;
 
@@ -84,10 +155,9 @@ int main() {
     	nh->R = root;
     }
 
-
     // initialize rows
     
-    vector<vector<node*> > rows(ecm.size());
+    rows.resize(ecm.size());
     vector<vector<node*> > matrix(ecm.size(),vector<node*>(ecm[0].size()));
 
     for(int i = 0; i < matrix.size(); ++i) {
@@ -100,6 +170,7 @@ int main() {
     	for(int j = 0; j < ecm[i].size(); ++j) {
             if(ecm[i][j]) {
                 node* nd = new node;
+                nd->row = i;
                 if(!rows[i].size()) {
                     nd->L = nd;
                     nd->R = nd;
@@ -107,6 +178,7 @@ int main() {
                     nd->R = rows[i][0];
                     nd->L = rows[i].back();
                 }
+                nd->C = headers[i];
                 rows[i].push_back(nd);
                 matrix[i][j] = nd;
             }
@@ -116,24 +188,19 @@ int main() {
     // rows not needed any more
 
     for(int x = 0; x < matrix[0].size(); ++x) {
-    	int found = 0;
-    	node* prev;
+    	node* prev = headers[x];
         for(int y = 0; y < matrix.size(); ++y) {
             if(matrix[y][x] != NULL) {
-                if(!found) {
-                    matrix[y][x]->U = headers[x];
-                    matrix[y][x]->D = headers[x];
-                } else {
-                    matrix[y][x]->U = prev;
-                    matrix[y][x]->D = headers[x];
-                }
-            	prev = matrix[y][x];
+                matrix[y][x]->U = prev;
+                matrix[y][x]->D = headers[x];
+                prev->D = matrix[y][x];
+                headers[x]->U = matrix[y][x];
+                prev = matrix[y][x];
             }
         }
     }
 
-    // 
-
+    exact(root);
 
     return 0;
 }
