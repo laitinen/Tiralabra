@@ -117,16 +117,23 @@ int main() {
 
     for(int x = 0; x < matrix[0].size(); ++x) {
     	int found = 0;
+    	node* prev;
         for(int y = 0; y < matrix.size(); ++y) {
             if(matrix[y][x] != NULL) {
                 if(!found) {
-
+                    matrix[y][x]->U = headers[x];
+                    matrix[y][x]->D = headers[x];
                 } else {
-
+                    matrix[y][x]->U = prev;
+                    matrix[y][x]->D = headers[x];
                 }
+            	prev = matrix[y][x];
             }
         }
     }
+
+    // 
+
 
     return 0;
 }
