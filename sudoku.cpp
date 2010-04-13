@@ -11,6 +11,7 @@ vector<int> sol;
 int selected = 0;
 
 set<set<int> > sols;
+bool halt = false;
 
 void exact(VVI v) {
 	if(v.size() == 0) {
@@ -20,6 +21,7 @@ void exact(VVI v) {
             newelem.insert(sol[i]);
         }
         sols.insert(newelem);
+        halt = true;
         return;
     }
 
@@ -58,6 +60,7 @@ void exact(VVI v) {
             selected += sel;
             sol.push_back(v[r].back());
             exact(nv);
+            if(halt) return;
             sol.pop_back();
             selected -= sel;
         }
@@ -114,20 +117,35 @@ int main() {
     glob = vec;
     exact(vec);
 
-    for(set<set<int> >::iterator it = sols.begin(); it != sols.end(); ++it) {
-        cout<<"Solution: "<<endl;
-        for(set<int>::iterator i = (*it).begin(); i != (*it).end(); ++i) {
-        	cout<<*i<<endl;
-        }
-        cout<<"--------"<<endl;
-    }
+    vector<vector<int> > solution(N,vector<int>(N));
 
+    for(set<set<int> >::iterator it = sols.begin(); it != sols.end(); ++it) {
+        for(set<int>::iterator i = (*it).begin(); i != (*it).end(); ++i) {
+        	//cout<<*i<<endl;
+        	int val = *i;
+        	int r = val / (N*N);
+        	int c = (val - (r*N*N)) / N;
+        	int cand = val - (r*N*N) - (c*N);
+        	solution[r][c] = cand + 1;
+        }
+    }
+    cout<<"Solution: "<<endl;
+    for(int i = 0; i < solution.size(); ++i) {
+        for(int j = 0; j < solution[i].size(); ++j) {
+            cout<<solution[i][j]<<" ";
+        }
+        cout<<endl;
+    }
+    cout<<"--------"<<endl;
+
+/*
     for(int i = 0; i < vec.size(); ++i) {
         for(int j = 0; j < vec[i].size(); ++j) {
             cout<<vec[i][j]<<" ";
         }
         cout<<endl;
     }
+    */
 
     return 0;
 }
