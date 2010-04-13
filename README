@@ -5,3 +5,6 @@ g++ bodlx.cpp -o bodlx -O2
 and run with
 
 ./bodlx < testcase, for example ./bodlx < sudoku.9.in.escargot
+
+Also to test with the conventional backtracking algorithm, please use 
+backtracking.cpp in a similar manner.
