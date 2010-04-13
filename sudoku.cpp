@@ -101,8 +101,8 @@ int main() {
                 int reg = region(r,c,N);
                 vec.back()[r*N + c] = 1;
                 vec.back()[N*N + r*N + cand] = 1;
-                vec.back()[2*N*N + 4*c + cand] = 1;
-                vec.back()[3*N*N + 4*reg + cand] = 1;
+                vec.back()[2*N*N + N*c + cand] = 1;
+                vec.back()[3*N*N + N*reg + cand] = 1;
             }
         }
     }

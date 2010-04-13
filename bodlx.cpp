@@ -1,9 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <cstdlib>
-#define NDEBUG 1
 #include <cassert>
+#include <cstdlib>
 #include <set>
 #include <map>
 
@@ -34,6 +33,8 @@ struct header : node {
 
 int N;
 header* PR;
+
+int cover_called = 0;
 
 vector<vector<int> > given_solution;
 
@@ -69,72 +70,31 @@ VVI exactify(const VVI& S, const int N) {
             }
         }
     }
-    
-    if(!given_solution.empty()) {
-    	map<int,int> rev;
-        map<int,int>::iterator it;
-        for(it = row_cand.begin(); it != row_cand.end(); ++it) {
-            rev[it->second] = it->first;
-        }
-
-        vector<int> check(vec[0].size());
-
-        for(int x = 0; x < given_solution.size(); ++x) {
-            for(int y = 0; y < given_solution[x].size(); ++y) {
-                int val = x * N * N + y * N + given_solution[x][y] - 1;
-                for(int i = 0; i < vec[rev[val]].size(); ++i) {
-                    check[i] += vec[rev[val]][i];
-                }
-            }
-        }
-
-        for(int i = 0; i < check.size(); ++i) {
-            assert(check[i] == 1);
-        }
-
-    }
 
     return vec;
 }
 
 
 void cover(node* head) {
-	assert(head != NULL);
-	assert(head->L != NULL);
-	assert(head->R != NULL);
-
-	//cout<<"Called cover"<<endl;
+	++cover_called;
     head->R->L = head->L;
     head->L->R = head->R;
     // how is an infinite loop even possible?
     for(node* i = head->D; i != head; i = i->D) {
-        assert(!hdrs.count(int(i)));
-    	assert(ptrs.count(int(i)));
-        //cout<<"new round"<<endl;
-        assert(i != NULL);
         for(node* j = i->R; j != i; j = j->R) {
-        	assert(!hdrs.count(int(j)));
-            assert(ptrs.count(int(j)));
-        	//cout<<(int(j))<<endl;
-        	//cout<<"R, C: "<<j->row<<", "<<j->col<<endl;
-        	//cout<<"mo2"<<endl;
-        	assert(j != NULL);
-        	assert(j->U != NULL);
-        	assert(j->D != NULL);
             j->D->U = j->U;
             j->U->D = j->D;
+            --j->C->size;
         }
     }
 }
 
 void uncover(node* head) {
-	assert(head != NULL);
-	//cout<<"Called uncover"<<endl;
     for(node* i = head->U; i != head; i = i->U) {
         for(node* j = i->L; j != i; j = j->L) {
-        	assert(j != NULL);
             j->D->U = j;
             j->U->D = j;
+            ++j->C->size;
         }
     }
     head->R->L = head;
@@ -146,8 +106,6 @@ vector<node*> ot;
 bool halt = false;
 
 void exact(header* root) {
-	//cout<<"jou"<<endl;
-	assert(root->R != NULL);
 	if(root->R == root) {
         // print solution
         vector<vector<int> > solved(N,vector<int>(N));
@@ -169,24 +127,26 @@ void exact(header* root) {
         halt = true;
         return;
     }
-    //cout<<"po"<<endl;
     // choose column
     header* head = dynamic_cast<header*>(root->R);
-    assert(head != NULL);
+    int val = head->size;
+    header* cur = dynamic_cast<header*>(head->R);
 
-    //cout<<"terve"<<endl;
+    while(cur != root) {
+    	if(cur->size < val) {
+            val = cur->size;
+            head = cur;
+        }
+        cur = dynamic_cast<header*>(cur->R);
+    }
+    
     cover(head);
-    //cout<<"boo"<<endl;
 
     for(node* r = head->D; r != head; r = r->D) {
-    	assert(r != NULL);
-    	//cout<<"you"<<endl;
         sol.push_back(r->row); 
         int k = ot.size();
         ot.push_back(r);
         for(node* j = r->R; j != r; j = j->R) {
-        	assert(j != NULL);
-            //cover(j);
             cover(j->C);
         }
         exact(root);
@@ -194,16 +154,12 @@ void exact(header* root) {
         r = ot[k];
         head = r->C;
         for(node* j = r->L; j != r; j = j->L) {
-        	assert(j != NULL);
-            //uncover(j);
             uncover(j->C);
         }
         sol.pop_back();
     }
 
-    //cout<<"mo"<<endl;
     uncover(head);
-    //cout<<"ended"<<endl;
 }
 
 vector<vector<node*> > rows;
@@ -228,15 +184,6 @@ int main(int argc, char** argv) {
     }
 
     VVI ecm = exactify(S,N); // exact cover matrix
-
-    /*
-    for(int i = 0; i < ecm.size(); ++i) {
-        for(int j = 0; j < ecm[i].size(); ++j) {
-            cout<<ecm[i][j]<<" ";
-        }
-        cout<<endl;
-    }
-    */
 
     // initialize root node
 
@@ -273,15 +220,6 @@ int main(int argc, char** argv) {
             matrix[i][j] = NULL;
         }
     }
-
-    /*
-    for(int i = 0; i < ecm.size(); ++i) {
-        for(int j = 0; j < ecm[0].size(); ++j) {
-            cout<<ecm[i][j]<<" ";
-        }
-        cout<<endl;
-    }
-    */
 
     for(int i = 0; i < ecm.size(); ++i) {
     	for(int j = 0; j < ecm[i].size(); ++j) {
@@ -321,66 +259,26 @@ int main(int argc, char** argv) {
     }
 
 
-    int counter = 0;
     for(int i = 0; i < headers.size(); ++i) {
+    	int counter = 0;
         header* head = headers[i];
         for(node* n = head->D; n != head; n = n->D) {
             ++counter; 
         }
-        hdrs.insert(int(head));
+        head->size = counter;
     }
 
     for(int i = 0; i < matrix.size(); ++i) {
         for(int j = 0; j < matrix[i].size(); ++j) {
             if(matrix[i][j] != NULL) {
             	ptrs.insert(int(matrix[i][j]));
-                assert(matrix[i][j]->D != NULL);
-                assert(matrix[i][j]->U != NULL);
-                assert(matrix[i][j]->L != NULL);
-                assert(matrix[i][j]->R != NULL);
-                assert(matrix[i][j]->C != NULL);
             }
         }
     }
 
-    set<int> used;
-
-    used.insert(int(root)); 
-
-    vector<node*> upc;
-
-    upc.push_back(root->R);
-
-    int ind = 0;
-
-
-    while(ind < upc.size()) {
-    	assert(upc.back() != NULL);
-    	assert(hdrs.count(int(upc.back())) + ptrs.count(int(upc.back())));
-        if(used.count(int(upc.back()))) {
-            ++ind;
-            continue;
-        }
-
-        used.insert(int(upc.back()));
-
-        assert(upc.back()->R != NULL);
-        assert(upc.back()->L != NULL);
-        assert(upc.back()->D != NULL);
-        assert(upc.back()->U != NULL);
-        //assert(upc.back()->C != NULL);
-
-        upc.push_back(upc.back()->R);
-        upc.push_back(upc.back()->L);
-        upc.push_back(upc.back()->U);
-        upc.push_back(upc.back()->D);
-        //upc.push_back(upc.back()->C);
-
-    }
-
-    assert(false);
-
     exact(root);
+
+    cout<<"Cover called: "<<cover_called<<endl;
 
     return 0;
 }
