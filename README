@@ -1,0 +1,7 @@
+To try out stuff, compile bodlx.cpp with for example the following:
+
+g++ bodlx.cpp -o bodlx -O2
+
+and run with
+
+./bodlx < testcase, for example ./bodlx < sudoku.9.in.escargot
