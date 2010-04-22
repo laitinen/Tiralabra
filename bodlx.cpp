@@ -38,7 +38,6 @@ int cover_called = 0;
 
 vector<vector<int> > given_solution;
 
-set<int> ptrs;
 set<int> hdrs;
 map<int,int> row_cand;
 
@@ -119,9 +118,9 @@ void exact(header* root) {
 
         for(int i = 0; i < solved.size(); ++i) {
             for(int j = 0; j < solved[i].size(); ++j) {
-                cerr<<solved[i][j]<<" ";
+                cout<<solved[i][j]<<" ";
             }
-            cerr<<endl;
+            cout<<endl;
         }
 
         halt = true;
@@ -268,17 +267,7 @@ int main(int argc, char** argv) {
         head->size = counter;
     }
 
-    for(int i = 0; i < matrix.size(); ++i) {
-        for(int j = 0; j < matrix[i].size(); ++j) {
-            if(matrix[i][j] != NULL) {
-            	ptrs.insert(int(matrix[i][j]));
-            }
-        }
-    }
-
     exact(root);
-
-    cout<<"Cover called: "<<cover_called<<endl;
 
     return 0;
 }
