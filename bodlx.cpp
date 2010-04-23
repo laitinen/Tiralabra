@@ -58,19 +58,16 @@ VVI exactify(const VVI& S, const int N) {
 
         		row_cand[vec.size()] = r*N*N + c*N + cand;
 
-        		vector<int> L(4*N*N);
-        		vec.push_back(L);
+        		vec.resize(vec.size()+1);
 
-                
                 int reg = region(r,c,N);
-                vec.back()[r*N + c] = 1;
-                vec.back()[N*N + r*N + cand] = 1;
-                vec.back()[2*N*N + N*c + cand] = 1;
-                vec.back()[3*N*N + N*reg + cand] = 1;
+                vec.back().push_back(r*N + c);
+                vec.back().push_back(N*N + r*N + cand);
+                vec.back().push_back(2*N*N + N*c + cand);
+                vec.back().push_back(3*N*N + N*reg + cand);
             }
         }
     }
-
     return vec;
 }
 
