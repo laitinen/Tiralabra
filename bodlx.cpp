@@ -32,11 +32,6 @@ struct header : node {
 };
 
 int N;
-header* PR;
-
-int cover_called = 0;
-
-vector<vector<int> > given_solution;
 
 set<int> hdrs;
 map<int,int> row_cand;
@@ -72,7 +67,6 @@ VVI exactify(const VVI& S, const int N) {
 
 
 void cover(node* head) {
-	++cover_called;
     head->R->L = head->L;
     head->L->R = head->R;
     // how is an infinite loop even possible?
@@ -105,7 +99,7 @@ void exact(header* root) {
 	if(root->R == root) {
         // print solution
         vector<vector<int> > solved(N,vector<int>(N));
-        for(int i = 0; i < sol.size(); ++i) {
+        for(int i = 0; i < int(sol.size()); ++i) {
         	int V = row_cand[sol[i]];
         	int r = V / N / N;
         	int c = (V - r*N*N) / N;
@@ -113,8 +107,8 @@ void exact(header* root) {
         	solved[r][c] = cand + 1;
         }
 
-        for(int i = 0; i < solved.size(); ++i) {
-            for(int j = 0; j < solved[i].size(); ++j) {
+        for(int i = 0; i < int(solved.size()); ++i) {
+            for(int j = 0; j < int(solved[i].size()); ++j) {
                 cout<<solved[i][j]<<" ";
             }
             cout<<endl;
@@ -158,26 +152,13 @@ void exact(header* root) {
     uncover(head);
 }
 
-vector<vector<node*> > rows;
-
-int main(int argc, char** argv) {
+int main() {
 	cin>>N;
 	VVI S(N,vector<int>(N));
 
     for(int i = 0; i < N; ++i)
     	for(int j = 0; j < N; ++j)
             cin>>S[i][j];
-
-	if(argc > 1) {
-        ifstream fin(argv[1]);
-        given_solution.resize(N);
-        for(int i = 0; i < N; ++i) {
-            given_solution[i].resize(N);
-            for(int j = 0; j < N; ++j) {
-                fin>>given_solution[i][j];
-            }
-        }
-    }
 
     VVI ecm = exactify(S,N); // exact cover matrix
 
@@ -187,13 +168,11 @@ int main(int argc, char** argv) {
     root->L = root;
     root->R = root;
 
-    PR = root;
-
     // initialize header nodes
 
     vector<header*> headers;
 
-    for(int i = 0; i < ecm[0].size(); ++i) {
+    for(int i = 0; i < N*N*4; ++i) {
     	header* nh = new header;
     	headers.push_back(nh);
 
@@ -206,61 +185,51 @@ int main(int argc, char** argv) {
     	nh->R = root;
     }
 
-    // initialize rows
-    
-    rows.resize(ecm.size());
-    vector<vector<node*> > matrix(ecm.size(),vector<node*>(ecm[0].size()));
+    int cc = 0;
+    for(int i = 0; i < int(ecm.size()); ++i) {
+    	node* first;
+    	node* prev = new node;
+    	first = prev;
+    	prev->R = prev;
+    	prev->L = prev;
+    	prev->D = headers[ecm[i][0]];
+    	prev->U = headers[ecm[i][0]]->U;
+    	prev->U->D = prev;
+    	prev->C = headers[ecm[i][0]];
+    	prev->row = i;
+    	prev->col = ecm[i][0];
+    	headers[ecm[i][0]]->U = prev;
+        for(int j = 1; j < int(ecm[i].size()); ++j) {
+            node* nd = new node;
+            nd->R = prev->R;
+            nd->L = prev;
+            prev->R->L = nd;
+            prev->R = nd;
+            prev = nd;
+            prev->C = headers[ecm[i][j]];
+            prev->D = headers[ecm[i][j]];
+            prev->U = headers[ecm[i][j]]->U;
+            prev->U->D = prev;
+            prev->row = i;
+            prev->col = ecm[i][j];
+            headers[ecm[i][j]]->U = prev;
+        }
 
-    for(int i = 0; i < matrix.size(); ++i) {
-        for(int j = 0; j < matrix[i].size(); ++j) {
-            matrix[i][j] = NULL;
+        ++cc;
+        for(node* f = first->R; f != first; f = f->R) {
+            ++cc;
         }
     }
 
-    for(int i = 0; i < ecm.size(); ++i) {
-    	for(int j = 0; j < ecm[i].size(); ++j) {
-            if(ecm[i][j]) {
-                node* nd = new node;
-                nd->row = i;
-                nd->col = j;
-                if(!rows[i].size()) {
-                    nd->L = nd;
-                    nd->R = nd;
-                } else {
-                    nd->R = rows[i][0];
-                    nd->L = rows[i].back();
-                    rows[i][0]->L = nd;
-                    rows[i].back()->R = nd;
-                }
-                nd->C = headers[j];
-                rows[i].push_back(nd);
-                matrix[i][j] = nd;
-            }
-        }
-    }
+    int count = 0;
 
-    // rows not needed any more
-
-    for(int x = 0; x < matrix[0].size(); ++x) {
-    	node* prev = headers[x];
-        for(int y = 0; y < matrix.size(); ++y) {
-            if(matrix[y][x] != NULL) {
-                matrix[y][x]->U = prev;
-                matrix[y][x]->D = headers[x];
-                prev->D = matrix[y][x];
-                headers[x]->U = matrix[y][x];
-                prev = matrix[y][x];
-            }
-        }
-    }
-
-
-    for(int i = 0; i < headers.size(); ++i) {
+    for(int i = 0; i < int(headers.size()); ++i) {
     	int counter = 0;
         header* head = headers[i];
         for(node* n = head->D; n != head; n = n->D) {
             ++counter; 
         }
+        count += counter;
         head->size = counter;
     }
 
