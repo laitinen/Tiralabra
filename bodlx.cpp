@@ -3,7 +3,6 @@
 #include <vector>
 #include <cassert>
 #include <cstdlib>
-#include <set>
 #include <map>
 
 
@@ -33,7 +32,6 @@ struct header : node {
 
 int N;
 
-set<int> hdrs;
 map<int,int> row_cand;
 
 int region(int r, int c, int N) {
